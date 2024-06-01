@@ -1,6 +1,28 @@
 const axios = require("axios");
 const cheerio = require("cheerio");
 
+const getArticleContent = async (url) => {
+  try {
+    const page = await axios.get(`https://www.chosun.com/${url}`);
+    const $ = cheerio.load(page.data);
+    const html = $.html();
+    const match = html.match(/Fusion\.globalContent\s*=\s*(\{.*?\});/s);
+    if (match) {
+      const json = JSON.parse(match[1]);
+      const body = json.content_elements.reduce((acc, cur) => {
+        if (cur.type === "text") {
+          acc += cur.content + "\n";
+        }
+        return acc;
+      }, "");
+      return body;
+    }
+    return "";
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 const getTopRankArticle = async () => {
   try {
     const datas = [
@@ -14,30 +36,23 @@ const getTopRankArticle = async () => {
       const page = await axios.get(`https://www.chosun.com/${data.category}`);
       const $ = cheerio.load(page.data);
       const html = $.html();
-      const startIdx = html.indexOf(`"chartbeat-toppages":{`);
-      let endIdx = 0;
-      const stack = ["{"];
-      for (let i = startIdx + 22; i < html.length; i++) {
-        if (stack.length === 0) {
-          endIdx = i;
-          break;
-        }
-        if (html[i] === "{") {
-          stack.push("{");
-        } else if (html[i] === "}") {
-          stack.pop();
-        }
+      const match = html.match(/Fusion\.contentCache\s*=\s*(\{.*?\});/s);
+      if (match) {
+        const json = JSON.parse(match[1]);
+        const chartbeatToppages = json["chartbeat-toppages"];
+        const key = Object.keys(chartbeatToppages)[0];
+        const charts = chartbeatToppages[key].data.content_elements;
+        const result = [];
+        charts.forEach(async (chart) => {
+          const body = await getArticleContent(chart.website_url);
+          result.push({
+            title: chart.headlines.basic,
+            url: chart.website_url,
+            body: body,
+          });
+        });
+        data.articles = result;
       }
-      const jsonString = html.slice(startIdx + 21, endIdx);
-      const json = JSON.parse(jsonString);
-      const charts = json[Object.keys(json)[0]].data.content_elements;
-      const result = charts.map((chart) => {
-        return {
-          title: chart.headlines.basic,
-          url: chart.website_url,
-        };
-      });
-      data.articles = result;
     }
     return datas;
   } catch (error) {
@@ -46,5 +61,5 @@ const getTopRankArticle = async () => {
 };
 
 getTopRankArticle().then((topRankArticles) => {
-  console.log(topRankArticles);
+  console.log(JSON.stringify(topRankArticles));
 });
