@@ -24,6 +24,7 @@
     "follow-redirects": "^1.15.6",
     "form-data": "^4.0.0",
     "htmlparser2": "^8.0.2",
+    "jsonwebtoken": "^9.0.2",
     "mime-db": "^1.52.0",
     "mime-types": "^2.1.35",
     "mysql2": "^3.10.0",
