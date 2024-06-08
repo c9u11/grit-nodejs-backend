@@ -38,6 +38,15 @@ router.get('/categories', (req, res) => {
   });
 });
 
+// 선택된 카테고리 목록 조회
+router.get('/categories/selected', (req, res) => {
+  const userId = 1;
+  conn.query("SELECT * FROM selected_categories WHERE user_id = ?", [userId], (err, rows) => {
+    if (err) throw err;
+    res.send(rows);
+  });
+});
+
 // 카테고리 선택
 router.post('/categories/selected', (req, res) => {
   const body = req.body;
