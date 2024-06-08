@@ -12,6 +12,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use('/api', router);
 
+// 유저 목록 조회
 router.get('/users', (req, res) => {
   conn.query("SELECT * FROM users", (err, rows) => {
     if (err) throw err;
@@ -19,6 +20,7 @@ router.get('/users', (req, res) => {
   });
 });
 
+// 회원가입
 router.post('/signup', (req, res) => {
   const body = req.body;
 
@@ -28,6 +30,16 @@ router.post('/signup', (req, res) => {
   });
 });
 
+// 카테고리 선택
+router.post('/category', (req, res) => {
+  const body = req.body;
+  const userId = 1;
+  const values = body.category.map(categoryId => `(${userId}, ${categoryId})`).join(',');
+  conn.query("INSERT INTO selected_categories (user_id, category_id) VALUES " + values, [], (err, rows) => {
+    if (err) throw err;
+    res.send(rows);
+  });
+});
 
 
 
