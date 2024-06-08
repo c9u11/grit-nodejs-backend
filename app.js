@@ -30,6 +30,14 @@ router.post('/signup', (req, res) => {
   });
 });
 
+// 카테고리 목록 조회
+router.get('/categories', (req, res) => {
+  conn.query("SELECT * FROM categories", (err, rows) => {
+    if (err) throw err;
+    res.send(rows);
+  });
+});
+
 // 카테고리 선택
 router.post('/category', (req, res) => {
   const body = req.body;
