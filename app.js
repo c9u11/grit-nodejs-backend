@@ -39,7 +39,7 @@ router.get('/categories', (req, res) => {
 });
 
 // 카테고리 선택
-router.post('/category', (req, res) => {
+router.post('/categories/selected', (req, res) => {
   const body = req.body;
   const userId = 1;
   const values = body.category.map(categoryId => `(${userId}, ${categoryId})`).join(',');
@@ -48,7 +48,6 @@ router.post('/category', (req, res) => {
     res.send(rows);
   });
 });
-
 
 
 app.listen(PORT, () => {
