@@ -28,8 +28,11 @@ router.post('/signup', (req, res) => {
   const body = req.body;
 
   conn.query("INSERT INTO users (username, email, password) VALUES (?, ?, ?)", [body.username, body.email, body.password], (err, rows) => {
-    if (err) throw err;
-    res.send(rows);
+    if (err) {
+      req.send({ code: 400, message: "Signup Error!" });
+      throw err
+    };
+    res.send({ code: 200, message: "Signup Success!" });
   });
 });
 
@@ -44,9 +47,9 @@ router.post('/login', (req, res) => {
     if (rows.length > 0) {
       const user = rows[0];
       const token = jwt.sign({ id: user.id, email: user.email });
-      res.send({ token });
+      res.send({ code: 200, token });
     } else {
-      res.send({ message: "Invalid email or password" });
+      res.send({ code: 400, message: "Invalid email or password" });
     }
   });
 });
