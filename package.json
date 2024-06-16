@@ -11,6 +11,7 @@
     "cheerio": "^1.0.0-rc.12",
     "cheerio-select": "^2.1.0",
     "combined-stream": "^1.0.8",
+    "cors": "^2.8.5",
     "css-select": "^5.1.0",
     "css-what": "^6.1.0",
     "delayed-stream": "^1.0.0",

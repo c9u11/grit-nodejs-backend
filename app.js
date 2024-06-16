@@ -2,6 +2,7 @@ const express = require("express");
 const db = require("./config/mysql.js");
 const bodyParser = require("body-parser");
 const jwt = require('./utils/jwt.js');
+const cors = require('cors');
 
 const app = express();
 const conn = db.init();
@@ -9,6 +10,7 @@ const conn = db.init();
 const PORT = 8080;
 
 const router = express.Router();
+app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use('/api', router);
