@@ -27,6 +27,14 @@ router.get('/users', (req, res) => {
 router.post('/signup', (req, res) => {
   const body = req.body;
 
+  conn.query("SELECT * FROM users WHERE email = ?", [body.email], (err, rows) => {
+    if (err) throw err;
+    if (rows.length > 0) {
+      res.send({ code: 400, message: "Email already exists" });
+      return;
+    }
+  });
+
   conn.query("INSERT INTO users (username, email, password) VALUES (?, ?, ?)", [body.username, body.email, body.password], (err, rows) => {
     if (err) {
       req.send({ code: 400, message: "Signup Error!" });
