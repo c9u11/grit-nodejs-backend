@@ -116,7 +116,24 @@ router.post('/categories/selected', (req, res) => {
   });
 });
 
-// 오늘의 퀴즈 조회
+// 기사 조회
+router.get('/articles', (req, res) => {
+  const auth = jwt.verify(req.headers.authorization);
+  if (!auth.result) {
+    res.send({ code: 400, message: "Invalid token" });
+    return;
+  }
+  const articleId = req.query.articleId;
+  conn.query("SELECT * FROM articles WHERE id = ?", [articleId], (err, row) => {
+    if (err) throw err;
+    res.send({
+      code: 200,
+      article: row,
+    });
+  });
+});
+
+// 오늘의 기사 조회
 router.get('/articles/today', (req, res) => {
   const auth = jwt.verify(req.headers.authorization);
   if (!auth.result) {
@@ -141,6 +158,7 @@ router.get('/articles/today', (req, res) => {
   });
 });
 
+// 내가 푼 기사 목록 조회
 router.get('/articles/solved', (req, res) => {
   const auth = jwt.verify(req.headers.authorization);
   if (!auth.result) {
@@ -156,6 +174,66 @@ router.get('/articles/solved', (req, res) => {
         code: 200,
         articleIds: rows,
       });
+    });
+  });
+});
+
+// 문제 조회
+router.get('/question', (req, res) => {
+  const auth = jwt.verify(req.headers.authorization);
+  if (!auth.result) {
+    res.send({ code: 400, message: "Invalid token" });
+    return;
+  }
+  const articleId = req.query.articleId;
+  conn.query("SELECT * FROM questions WHERE article_id = ?", [articleId], (err, questions) => {
+    if (err) throw err;
+    const questionId = questions[0].id;
+    conn.query("SELECT * FROM choices WHERE question_id = ?", [questionId], (err, rows) => {
+      if (err) throw err;
+      res.send({
+        code: 200,
+        question: {
+          ...questions[0],
+          choices: rows
+        }
+      });
+    });
+  });
+});
+
+// 문제 history 조회
+router.get('/history', (req, res) => {
+  const auth = jwt.verify(req.headers.authorization);
+  if (!auth.result) {
+    res.send({ code: 400, message: "Invalid token" });
+    return;
+  }
+  const userId = auth.payload.id;
+  const questionId = req.query.questionId;
+  conn.query("SELECT * FROM histories WHERE user_id = ? AND question_id = ?", [userId, questionId], (err, rows) => {
+    if (err) throw err;
+    res.send({
+      code: 200,
+      histories: rows,
+    });
+  });
+});
+
+// 문제 풀기
+router.post('/history', (req, res) => {
+  const auth = jwt.verify(req.headers.authorization);
+  if (!auth.result) {
+    res.send({ code: 400, message: "Invalid token" });
+    return;
+  }
+  const userId = auth.payload.id;
+  const body = req.body;
+  conn.query("INSERT INTO histories (user_id, question_id, selected_choice) VALUES (?, ?, ?)", [userId, body.questionId, body.answer], (err, rows) => {
+    if (err) throw err;
+    res.send({
+      code: 200,
+      message: "History saved",
     });
   });
 });
