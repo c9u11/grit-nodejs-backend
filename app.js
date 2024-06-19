@@ -242,6 +242,24 @@ router.post('/history', (req, res) => {
   });
 });
 
+// ranking 조회
+router.get('/ranking', (req, res) => {
+  const auth = jwt.verify(req.headers.authorization);
+  if (!auth.result) {
+    res.send({ code: 400, message: "Invalid token" });
+    return;
+  }
+  const userId = auth.payload.id;
+  conn.query("SELECT user_id, username, COUNT(*) FROM histories JOIN users ON histories.user_id = users.id GROUP BY user_id ORDER BY COUNT(*)", (err, rows) => {
+    if (err) throw err;
+    res.send({
+      code: 200,
+      ranking: rows,
+      userId,
+    });
+  });
+});
+
 app.listen(PORT, () => {
   console.log("Server is running on http://localhost:" + PORT);
 })
