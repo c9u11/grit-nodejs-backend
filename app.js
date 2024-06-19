@@ -169,10 +169,14 @@ router.get('/articles/solved', (req, res) => {
   const articleId = req.query.articleIds.split(',');
   conn.query("SELECT id FROM questions WHERE article_id IN (?)", [articleId], (err, rows) => {
     if (err) throw err;
-    conn.query("SELECT articles_id FROM histories WHERE user_id = ? AND question_id IN (?)", [userId, rows.map(row => row.id)], (err, rows) => {
-      res.send({
-        code: 200,
-        articleIds: rows,
+    conn.query("SELECT question_id FROM histories WHERE user_id = ? AND question_id IN ( ? )", [userId, rows.map(row => row.id)], (err, rows) => {
+      if (err) throw err;
+      conn.query("SELECT article_id FROM questions WHERE id IN (?)", [rows.map(row => row.question_id)], (err, rows) => {
+        if (err) throw err;
+        res.send({
+          code: 200,
+          articleIds: rows.map(row => row.article_id),
+        });
       });
     });
   });
