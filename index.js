@@ -105,28 +105,29 @@ const main = async () => {
       const date = `${splitUrl[numberIdx]}-${splitUrl[numberIdx + 1]}-${splitUrl[numberIdx + 2]}`;
       conn.query("INSERT INTO articles (category_id, title, body, url, created_at) VALUES (?, ?, ?, ?, ?)", [topRankArticle.id, article.title, article.body, article.url, date], (err, rows) => {
         if (err) throw err;
-      });
+        const articleId = rows.insertId;
 
-      openai.chat.completions.create({
-        messages: [{
-          role: "system",
-          content: `${PROMPT}${article.body}`
-        }],
-        model: "gpt-3.5-turbo",
-      }).then(res => {
-        const content = res.choices[0].message.content;
-        const json = JSON.parse(content);
-        conn.query("INSERT INTO questions (article_id, title, body, answer, solution) VALUES (?, ?, ?, ?, ?)", [topRankArticle.id, json.quizTitle, json.sentence, json.answer, json.solution], (err, rows) => {
-          if (err) throw err;
-          const questionId = rows.insertId;
-          json.choices.forEach((choice, idx) => {
-            conn.query("INSERT INTO choices (question_id, choices.index, body) VALUES (?, ?, ?)", [questionId, idx + 1, choice], (err, rows) => {
-              if (err) throw err;
+        openai.chat.completions.create({
+          messages: [{
+            role: "system",
+            content: `${PROMPT}${article.body}`
+          }],
+          model: "gpt-3.5-turbo",
+        }).then(res => {
+          const content = res.choices[0].message.content;
+          const json = JSON.parse(content);
+          conn.query("INSERT INTO questions (article_id, title, body, answer, solution) VALUES (?, ?, ?, ?, ?)", [articleId, json.quizTitle, json.sentence, json.answer, json.solution], (err, rows) => {
+            if (err) throw err;
+            const questionId = rows.insertId;
+            json.choices.forEach((choice, idx) => {
+              conn.query("INSERT INTO choices (question_id, choices.index, body) VALUES (?, ?, ?)", [questionId, idx + 1, choice], (err, rows) => {
+                if (err) throw err;
+              });
             });
           });
+        }).catch(err => {
+          console.error('문제 생성 실패', err);
         });
-      }).catch(err => {
-        console.error('문제 생성 실패', err);
       });
     }
   }
