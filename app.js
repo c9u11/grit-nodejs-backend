@@ -57,7 +57,7 @@ router.post('/login', (req, res) => {
       conn.query("SELECT * FROM selected_categories WHERE user_id = ?", [user.id], (err, rows) => {
         if (err) throw err;
         const selectedCategories = rows.map(row => row.category_id);
-        const token = jwt.sign({ id: user.id, email: user.email });
+        const token = jwt.sign({ id: user.id, email: user.email, username: user.username });
         res.send({ code: 200, token, selectedCategories });
       });
     } else {
@@ -76,21 +76,43 @@ router.get('/categories', (req, res) => {
 
 // 선택된 카테고리 목록 조회
 router.get('/categories/selected', (req, res) => {
-  const userId = 1;
+  const auth = jwt.verify(req.headers.authorization);
+  if (!auth.result) {
+    res.send({ code: 400, message: "Invalid token" });
+    return;
+  }
+  const userId = auth.payload.id;
   conn.query("SELECT * FROM selected_categories WHERE user_id = ?", [userId], (err, rows) => {
     if (err) throw err;
-    res.send(rows);
+    res.send({
+      code: 200,
+      selectedCategories: rows.map(row => row.category_id),
+      username: auth.payload.username,
+    });
   });
 });
 
 // 카테고리 선택
 router.post('/categories/selected', (req, res) => {
+  const auth = jwt.verify(req.headers.authorization);
+  if (!auth.result) {
+    res.send({ code: 400, message: "Invalid token" });
+    return;
+  }
+  const userId = auth.payload.id;
   const body = req.body;
-  const userId = 1;
-  const values = body.category.map(categoryId => `(${userId}, ${categoryId})`).join(',');
+  // remove all selected categories
+  conn.query("DELETE FROM selected_categories WHERE user_id = ?", [userId], (err, rows) => {
+    if (err) throw err;
+  });
+
+  const values = body.selectedCategories.map(categoryId => `(${userId}, ${categoryId})`).join(',');
   conn.query("INSERT INTO selected_categories (user_id, category_id) VALUES " + values, [], (err, rows) => {
     if (err) throw err;
-    res.send(rows);
+    res.send({
+      code: 200,
+      message: "Selected categories updated",
+    });
   });
 });
 
