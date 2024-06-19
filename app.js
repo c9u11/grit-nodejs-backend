@@ -116,6 +116,50 @@ router.post('/categories/selected', (req, res) => {
   });
 });
 
+// 오늘의 퀴즈 조회
+router.get('/articles/today', (req, res) => {
+  const auth = jwt.verify(req.headers.authorization);
+  if (!auth.result) {
+    res.send({ code: 400, message: "Invalid token" });
+    return;
+  }
+  const userId = auth.payload.id;
+  conn.query("SELECT * FROM selected_categories WHERE user_id = ?", [userId], (err, catgories) => {
+    if (err) throw err;
+    const query = catgories.map(category => `(SELECT * FROM articles WHERE category_id = ${category.category_id} ORDER BY id DESC LIMIT 1)`).join(' UNION ALL ');
+    conn.query(query, (err, articles) => {
+      if (err) throw err;
+      res.send({
+        code: 200,
+        articles: articles.map(article => {
+          return {
+            ...article,
+          }
+        })
+      });
+    });
+  });
+});
+
+router.get('/articles/solved', (req, res) => {
+  const auth = jwt.verify(req.headers.authorization);
+  if (!auth.result) {
+    res.send({ code: 400, message: "Invalid token" });
+    return;
+  }
+  const userId = auth.payload.id;
+  const articleId = req.query.articleIds.split(',');
+  conn.query("SELECT id FROM questions WHERE article_id IN (?)", [articleId], (err, rows) => {
+    if (err) throw err;
+    conn.query("SELECT articles_id FROM histories WHERE user_id = ? AND question_id IN (?)", [userId, rows.map(row => row.id)], (err, rows) => {
+      res.send({
+        code: 200,
+        articleIds: rows,
+      });
+    });
+  });
+});
+
 app.listen(PORT, () => {
   console.log("Server is running on http://localhost:" + PORT);
 })
