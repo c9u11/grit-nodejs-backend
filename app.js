@@ -54,8 +54,12 @@ router.post('/login', (req, res) => {
     if (err) throw err;
     if (rows.length > 0) {
       const user = rows[0];
-      const token = jwt.sign({ id: user.id, email: user.email });
-      res.send({ code: 200, token });
+      conn.query("SELECT * FROM selected_categories WHERE user_id = ?", [user.id], (err, rows) => {
+        if (err) throw err;
+        const selectedCategories = rows.map(row => row.category_id);
+        const token = jwt.sign({ id: user.id, email: user.email });
+        res.send({ code: 200, token, selectedCategories });
+      });
     } else {
       res.send({ code: 400, message: "Invalid email or password" });
     }
