@@ -260,6 +260,23 @@ router.get('/ranking', (req, res) => {
   });
 });
 
+// 통계 조회
+router.get('/statistics', (req, res) => {
+  const auth = jwt.verify(req.headers.authorization);
+  if (!auth.result) {
+    res.send({ code: 400, message: "Invalid token" });
+    return;
+  }
+  const userId = auth.payload.id;
+  conn.query("SELECT COUNT(*) as total, SUM(CASE WHEN joinTable.selected = joinTable.answer THEN 1 ELSE 0 END)/COUNT(*) as accuracy_rate  FROM (	SELECT c.index as selected, q.answer as answer FROM histories h JOIN questions q ON h.question_id = q.id JOIN choices c ON h.selected_choice = c.id WHERE h.user_id = ?) as joinTable;", [userId], (err, rows) => {
+    if (err) throw err;
+    res.send({
+      code: 200,
+      statistics: rows[0],
+    });
+  });
+});
+
 app.listen(PORT, () => {
   console.log("Server is running on http://localhost:" + PORT);
 })
